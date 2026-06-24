@@ -119,7 +119,7 @@ if "w2_count" not in st.session_state:
 if "match_count" not in st.session_state:
     st.session_state.match_count = 0
 
-# --- Interface Design Custom Styling Injector ---
+# --- Advanced Premium Theme Engine & Style Injector ---
 st.set_page_config(
     page_title="Redesign SEO Migration Suite", page_icon="🔮", layout="wide"
 )
@@ -127,57 +127,132 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
     
-    /* Global Font Settings */
-    html, body, [data-testid="stAppViewContainer"] {
+    /* Global Application Reset & Background Engine */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #0B0F19 !important;
+        color: #F1F5F9 !important;
     }
     
-    /* Modern Header */
+    /* Modern Dashboard Title Typography */
     .dashboard-title {
-        color: #00FFCC !important;
+        background: linear-gradient(135deg, #00FFCC 0%, #0077FF 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         font-weight: 800 !important;
-        font-size: 2.5rem !important;
-        letter-spacing: -0.5px;
-        text-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
-        margin-bottom: 2px;
+        font-size: 2.8rem !important;
+        letter-spacing: -1px;
+        margin-bottom: 6px;
     }
     
-    /* Styled Subheading and Powered By text */
     .dashboard-subheading {
-        color: #cbd5e1 !important;
-        font-size: 1.05rem !important;
+        color: #94A3B8 !important;
+        font-size: 1.1rem !important;
         font-weight: 400 !important;
-        margin-bottom: 4px;
+        line-height: 1.6;
+        margin-bottom: 2px;
     }
     
     .brand-attribution {
         color: #00FFCC !important;
-        font-weight: 600 !important;
-        font-size: 0.9rem !important;
-        letter-spacing: 0.5px;
-        margin-bottom: 20px;
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 30px;
+        opacity: 0.9;
     }
     
-    /* Metrics Custom Display */
+    /* Premium Glassmorphic Card Container for Inputs & Expanders */
+    div[data-testid="stExpander"], .stTextInput > div {
+        background: rgba(30, 41, 59, 0.4) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        backdrop-filter: blur(8px);
+    }
+    
+    /* Sleek Metrics Cards Transformation */
+    div[data-testid="stMetric"] {
+        background: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid rgba(0, 255, 204, 0.15) !important;
+        border-radius: 16px !important;
+        padding: 20px 24px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 15px rgba(0, 255, 204, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 255, 204, 0.12);
+    }
     div[data-testid="stMetricValue"] {
         color: #00FFCC !important;
-        font-weight: 700 !important;
-        font-size: 2.6rem !important;
+        font-weight: 800 !important;
+        font-size: 2.8rem !important;
+        letter-spacing: -0.5px;
     }
     div[data-testid="stMetricLabel"] {
-        color: #cbd5e1 !important;
-        font-size: 0.95rem !important;
+        color: #94A3B8 !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 1px;
+    }
+    
+    /* Action Button Themes Reset */
+    button[aria-label="⚡ RUN MATCHING AUDIT"] {
+        background: linear-gradient(135deg, #00FFCC 0%, #0077FF 100%) !important;
+        color: #0B0F19 !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 12px 24px !important;
+        box-shadow: 0 4px 20px rgba(0, 255, 204, 0.25) !important;
+        transition: all 0.25s ease !important;
+    }
+    button[aria-label="⚡ RUN MATCHING AUDIT"]:hover {
+        box-shadow: 0 6px 28px rgba(0, 255, 204, 0.45) !important;
+        transform: scale(1.01);
+    }
+    
+    /* Secondary Download Buttons Style Adjustments */
+    div.stDownloadButton > button {
+        background: rgba(30, 41, 59, 0.7) !important;
+        color: #F1F5F9 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+    }
+    div.stDownloadButton > button:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: #00FFCC !important;
+        color: #00FFCC !important;
+    }
+    
+    /* Clean Modernized Scrollbars */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0B0F19;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #1E293B;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #334155;
     }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# Header Section with Title (G99 Removed), Option 2 Subheading, and Brand Attribution
+# Header Section
 st.markdown(
     "<h1 class='dashboard-title'>🔮 Redesign SEO Migration Suite</h1>",
     unsafe_allow_html=True,
