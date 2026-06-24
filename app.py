@@ -149,24 +149,23 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Header Section Renamed for Website Redesign Context
+# Header Section
 st.markdown(
     "<h1 class='dashboard-title'>🔮 Redesign SEO Migration Suite</h1>",
     unsafe_allow_html=True,
 )
 
-# Detailed Info Dropdown
+# Detailed Info Dropdown - UPDATED INFORMATION BLOCK
 with st.expander("ℹ️ About This Audit Engine & Workflow Pipeline", expanded=False):
     st.markdown(
         """
         ### What this application does:
-        This platform automates structural verification during web migrations to guarantee that SEO infrastructure remains intact when moving from production to a staging environment.
+        This application automates and speeds up the **SEO migration process during a website redesign**. It eliminates manual entry by scraping data from your old, live website and restructuring it into a clean blueprint format ready for bulk deployment on your new site.
         
-        **The automated workflow pipeline operates in four major phases:**
-        1. **Recursive Sitemap Parsing:** Deep-scrapes nested XML architectures (such as index files, page maps, and post structures) to isolate every production and development URL string.
-        2. **URL Isolation & Clean-Path Normalization:** Drops varying structural prefixes, domains, and trailing slashes to isolate identical structural paths (**slugs**) as unique database validation matching keys.
-        3. **Live Meta-Data Mining Extraction:** Crawls individual pages on the **Current Live Site** in real time to collect production elements (SEO Meta Titles, Descriptions, Canonical links, Open Graph parameters, and Schema structure objects).
-        4. **Side-by-Side Convergence Mapping:** Merges staging structures against production nodes. Slugs that are perfectly verified are marked as `MATCHED`, highlighting structural drops as `NO MATCH` dependencies to bypass configuration drift.
+        **Key Features & Workflow:**
+        * **Automated URL Mapping:** Deep-scrapes sitemaps from both your **Current Live Site** and **Beta Site**, matching corresponding pages automatically using URL slugs.
+        * **Full-Scale SEO Scraper:** Crawls the live site to gather **all production SEO meta-data** including Meta Titles, Meta Descriptions, Canonical Tags, Open Graph structures, and Schema JSON-LD blocks.
+        * **RankMath Compatibility Export:** Packages all extracted metrics into a custom structured data sheet designed for WordPress imports, allowing you to bulk-upload and instantly deploy your entire SEO portfolio onto the new environment.
         """
     )
 
@@ -325,22 +324,29 @@ if st.session_state.audit_results is not None:
         )
 
     with btn_col2:
-        # Generate the formatted RankMath file targeting matched beta site paths
+        # Build complete schema matrix containing all extracted data
         matched_df = st.session_state.audit_results[
             st.session_state.audit_results["Match Status"] == "MATCHED"
         ].copy()
-        rankmath_df = pd.DataFrame(
+
+        rankmath_complete_df = pd.DataFrame(
             {
                 "url": matched_df["Beta Site Raw URL"],
                 "title": matched_df["Meta Title (from Live)"],
                 "description": matched_df["Meta Description (from Live)"],
+                "canonical": matched_df["Canonical Tag (from Live)"],
+                "og_metadata": matched_df["Open Graph Tags (from Live)"],
+                "schema_markup": matched_df["Schema JSON-LD (from Live)"],
             }
         )
-        rankmath_csv = rankmath_df.to_csv(index=False, encoding="utf-8-sig")
+
+        rankmath_all_csv = rankmath_complete_df.to_csv(
+            index=False, encoding="utf-8-sig"
+        )
         st.download_button(
-            label="📥 EXPORT RANKMATH IMPORT CSV",
-            data=rankmath_csv,
-            file_name="rankmath_seo_import.csv",
+            label="📥 EXPORT RANKMATH ALL SEO DATA",
+            data=rankmath_all_csv,
+            file_name="rankmath_complete_seo_export.csv",
             mime="text/csv",
             use_container_width=True,
         )
@@ -351,5 +357,4 @@ if st.session_state.audit_results is not None:
             st.session_state.w1_count = 0
             st.session_state.w2_count = 0
             st.session_state.match_count = 0
-            st.clear_cache()
             st.rerun()
