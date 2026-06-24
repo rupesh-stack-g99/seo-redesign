@@ -97,7 +97,9 @@ def scrape_website_1_seo(url):
 
 
 # --- Streamlit Layout Configuration ---
-st.set_page_config(page_title="SEO Migration Mapper", page_icon="🗺️", layout="wide")
+st.set_page_config(
+    page_title="Slug SEO Migration Mapper", page_icon="🗺️", layout="wide"
+)
 
 st.title("🗺️ Automated URL Slug-to-Slug SEO Mapper")
 st.write(
@@ -162,8 +164,8 @@ if st.button("Extract, Match Slugs & Generate Sheet", type="primary"):
                     final_rows.append(
                         {
                             "#": idx,
-                            "Website 1 Slug (Live)": display_slug,
-                            "Website 2 Slug (Beta)": display_slug,
+                            "Website 1 Slug": display_slug,
+                            "Website 2 Slug": display_slug,
                             "Match Status": "MATCHED",
                             "Meta Title (from W1)": w1_seo["title"],
                             "Meta Description (from W1)": w1_seo["meta_description"],
@@ -176,8 +178,8 @@ if st.button("Extract, Match Slugs & Generate Sheet", type="primary"):
                     final_rows.append(
                         {
                             "#": idx,
-                            "Website 1 Slug (Live)": "N/A",
-                            "Website 2 Slug (Beta)": display_slug,
+                            "Website 1 Slug": "N/A",
+                            "Website 2 Slug": display_slug,
                             "Match Status": "NO MATCH FOUND",
                             "Meta Title (from W1)": "N/A",
                             "Meta Description (from W1)": "N/A",
