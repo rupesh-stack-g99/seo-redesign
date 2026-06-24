@@ -7,7 +7,7 @@ import pandas as pd
 import requests
 import streamlit as st
 
-# --- Helper Functions ---
+# --- Core Crawler Functions ---
 
 
 def get_slug_from_url(url):
@@ -97,7 +97,7 @@ def scrape_current_live_site_seo(url):
         return None
 
 
-# --- Session State Handling ---
+# --- Cache Management ---
 if "audit_results" not in st.session_state:
     st.session_state.audit_results = None
 if "w1_count" not in st.session_state:
@@ -107,67 +107,47 @@ if "w2_count" not in st.session_state:
 if "match_count" not in st.session_state:
     st.session_state.match_count = 0
 
-# --- Advanced Cyberpunk UI Dashboard Theme ---
+# --- Interface Design Custom Styling Injector ---
 st.set_page_config(
-    page_title="SEO Migration Command Center", page_icon="🔮", layout="wide"
+    page_title="SEO Migration Suite", page_icon="🔮", layout="wide"
 )
 
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     
-    .main .block-container { padding-top: 2rem; padding-bottom: 2rem; }
+    /* Global Font Settings */
+    html, body, [data-testid="stAppViewContainer"] {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
     
-    /* Title Graphics */
-    .title-glow {
-        font-family: 'Orbitron', sans-serif;
+    /* Modern Header */
+    .dashboard-title {
         color: #00FFCC !important;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-shadow: 0 0 15px rgba(0, 255, 204, 0.6);
-        margin-bottom: 5px;
+        font-weight: 800 !important;
+        font-size: 2.5rem !important;
+        letter-spacing: -0.5px;
+        text-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+        margin-bottom: 4px;
     }
-    .subtitle-text {
-        font-family: 'Rajdhani', sans-serif;
-        color: #8A99AD;
-        font-size: 1.15rem;
-        font-weight: 500;
-        margin-bottom: 25px;
+    .dashboard-subtitle {
+        color: #94A3B8;
+        font-size: 1.1rem;
+        margin-bottom: 30px;
     }
     
-    /* Tech Glass Cards */
-    .crypto-card {
-        background: linear-gradient(135deg, rgba(19, 26, 42, 0.9) 0%, rgba(10, 15, 28, 0.95) 100%);
-        border: 1px solid rgba(0, 255, 204, 0.2);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 25px;
-    }
-    .crypto-card h4 {
-        font-family: 'Orbitron', sans-serif;
-        color: #FF007F !important;
-        font-size: 1rem;
-        letter-spacing: 1px;
-        margin-bottom: 15px;
-    }
-    
-    /* Metrics Styling */
+    /* Metrics Custom Display */
     div[data-testid="stMetricValue"] {
         color: #00FFCC !important;
-        font-family: 'Orbitron', monospace;
-        font-size: 2.5rem !important;
-        font-weight: 700;
-        text-shadow: 0 0 10px rgba(0,255,204,0.3);
+        font-weight: 700 !important;
+        font-size: 2.6rem !important;
     }
     div[data-testid="stMetricLabel"] {
-        font-family: 'Rajdhani', sans-serif;
-        color: #AEB9E6 !important;
-        font-size: 1rem !important;
+        color: #cbd5e1 !important;
+        font-size: 0.95rem !important;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
     }
     </style>
 """,
@@ -175,16 +155,16 @@ st.markdown(
 )
 
 # Header Section
-st.markdown("<h1 class='title-glow'>🔮 SEO Migration Matrix</h1>", unsafe_allow_html=True)
 st.markdown(
-    "<p class='subtitle-text'>Deep-scanning automation engine pairing production structural slugs with target data branches.</p>",
+    "<h1 class='dashboard-title'>🔮 SEO Migration Matrix</h1>",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    "<p class='dashboard-subtitle'>Automated structural verification pairing Current Live Site nodes with Beta Site destinations.</p>",
     unsafe_allow_html=True,
 )
 
-# Input Control Panel Block
-st.markdown("<div class='crypto-card'>", unsafe_allow_html=True)
-st.markdown("<h4>TARGET NETWORK ENDPOINTS</h4>", unsafe_allow_html=True)
-
+# Target Entry Panel
 col1, col2 = st.columns(2)
 with col1:
     sitemap_1_input = st.text_input(
@@ -198,20 +178,25 @@ with col2:
     )
 
 st.write("")
-action_btn = st.button("RUN AUTOMATED MATRIX ALIGNMENT", use_container_width=True)
-st.markdown("</div>", unsafe_allow_html=True)
 
-# Processing Engine
+# Centered Action Trigger Implementation Block
+_, center_btn_col, _ = st.columns([2, 2, 2])
+with center_btn_col:
+    action_btn = st.button(
+        "⚡ RUN MATCHING AUDIT", type="primary", use_container_width=True
+    )
+
+# Execution Logic Processing Window
 if action_btn:
     if not sitemap_1_input or not sitemap_2_input:
-        st.error("Execution halted: Endpoint URLs must be provided.")
+        st.error("Execution parameters incomplete. Both targets are required.")
     else:
-        with st.spinner("Extracting deep tracking records recursively..."):
+        with st.spinner("Extracting deep index maps recursively..."):
             w1_urls = extract_urls_from_sitemap_url(sitemap_1_input.strip())
             w2_urls = extract_urls_from_sitemap_url(sitemap_2_input.strip())
 
         if len(w1_urls) == 0 or len(w2_urls) == 0:
-            st.error("Zero records retrieved. Check target sitemap status.")
+            st.error("Failed to parse targets. Confirm XML access privileges.")
         else:
             st.session_state.w1_count = len(w1_urls)
             st.session_state.w2_count = len(w2_urls)
@@ -227,7 +212,7 @@ if action_btn:
             status_text = st.empty()
 
             for i, (slug, url) in enumerate(w1_slug_to_url.items()):
-                status_text.markdown(f"`Scanning Live Site Node:` **/{slug}**")
+                status_text.markdown(f"`Scanning Live Site:` **/{slug}**")
                 seo = scrape_current_live_site_seo(url)
                 if seo:
                     w1_seo_data[slug] = seo
@@ -283,13 +268,13 @@ if action_btn:
 
             st.session_state.match_count = matched_counter
             st.session_state.audit_results = pd.DataFrame(final_rows)
-            st.toast("Matrix Compiled Successfully!", icon="🚀")
+            st.toast("Verification Complete!", icon="✨")
 
-# Dashboard Results Display Workspace
+# Presentation Panel View Layout
 if st.session_state.audit_results is not None:
-    st.write("")
+    st.write("---")
 
-    # Real-time Analytics Cards
+    # Balanced Analytics Metrics Row
     m1, m2, m3 = st.columns(3)
     with m1:
         st.metric(label="Live Site Total URLs", value=st.session_state.w1_count)
@@ -300,7 +285,7 @@ if st.session_state.audit_results is not None:
 
     st.write("")
 
-    # Data Presentation Panel
+    # High-Definition Unified Grid Layout Viewport
     st.dataframe(
         st.session_state.audit_results,
         use_container_width=True,
@@ -309,7 +294,7 @@ if st.session_state.audit_results is not None:
 
     st.write("")
 
-    # Cleaned, Side-by-Side Action Button Control Bar
+    # Perfectly Aligned Bottom Navigation/Action Bar
     btn_col1, btn_col2 = st.columns(2)
 
     with btn_col1:
@@ -317,7 +302,7 @@ if st.session_state.audit_results is not None:
             index=False, encoding="utf-8-sig"
         )
         st.download_button(
-            label="📥 EXPORT CLEAN MATRIX CSV",
+            label="📥 EXPORT DATA SHEET CSV",
             data=csv_data,
             file_name="seo_migration_matrix.csv",
             mime="text/csv",
@@ -325,10 +310,9 @@ if st.session_state.audit_results is not None:
         )
 
     with btn_col2:
-        if st.button("🔄 RESET SUITE & RERUN NEW AUDIT", use_container_width=True):
+        if st.button("🔄 RESET AUDIT SYSTEM", use_container_width=True):
             st.session_state.audit_results = None
             st.session_state.w1_count = 0
             st.session_state.w2_count = 0
             st.session_state.match_count = 0
-            st.clear_cache()
             st.rerun()
