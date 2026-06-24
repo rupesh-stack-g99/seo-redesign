@@ -97,6 +97,18 @@ def scrape_current_live_site_seo(url):
         return None
 
 
+def get_domain_prefix(url):
+    """Extracts clean domain name string to generate unique file export signatures."""
+    try:
+        parsed = urlparse(url.strip())
+        domain = parsed.netloc if parsed.netloc else parsed.path
+        domain = domain.replace("www.", "")
+        clean_name = re.sub(r"[^\w\-_]", "_", domain)
+        return clean_name.strip("_") if clean_name else "live_site"
+    except Exception:
+        return "live_site"
+
+
 # --- Cache Management ---
 if "audit_results" not in st.session_state:
     st.session_state.audit_results = None
@@ -109,7 +121,7 @@ if "match_count" not in st.session_state:
 
 # --- Interface Design Custom Styling Injector ---
 st.set_page_config(
-    page_title="Redesign SEO Migration Suite", page_icon="🔮", layout="wide"
+    page_title="G99 Redesign SEO Migration Suite", page_icon="🔮", layout="wide"
 )
 
 st.markdown(
@@ -129,7 +141,23 @@ st.markdown(
         font-size: 2.5rem !important;
         letter-spacing: -0.5px;
         text-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+        margin-bottom: 2px;
+    }
+    
+    /* Styled Subheading and Powered By text */
+    .dashboard-subheading {
+        color: #cbd5e1 !important;
+        font-size: 1.05rem !important;
+        font-weight: 400 !important;
         margin-bottom: 4px;
+    }
+    
+    .brand-attribution {
+        color: #00FFCC !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+        letter-spacing: 0.5px;
+        margin-bottom: 20px;
     }
     
     /* Metrics Custom Display */
@@ -149,13 +177,21 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Header Section
+# Header Section with Title, New Subheading, and Brand Attribution
 st.markdown(
-    "<h1 class='dashboard-title'>🔮 Redesign SEO Migration Suite</h1>",
+    "<h1 class='dashboard-title'>🔮 G99 Redesign SEO Migration Suite</h1>",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    "<div class='dashboard-subheading'>Automated mapping, core metadata harvesting, and structural preservation suite for modern website redesign deployments.</div>",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    "<div class='brand-attribution'>POWERED BY GROWTH99</div>",
     unsafe_allow_html=True,
 )
 
-# Detailed Info Dropdown - UPDATED INFORMATION BLOCK
+# Detailed Info Dropdown
 with st.expander("ℹ️ About This Audit Engine & Workflow Pipeline", expanded=False):
     st.markdown(
         """
@@ -308,6 +344,9 @@ if st.session_state.audit_results is not None:
 
     st.write("")
 
+    # Determine Domain Prefix Signature Name dynamically
+    site_prefix = get_domain_prefix(sitemap_1_input)
+
     # Action Row Options Grid
     btn_col1, btn_col2, btn_col3 = st.columns(3)
 
@@ -318,13 +357,12 @@ if st.session_state.audit_results is not None:
         st.download_button(
             label="📥 EXPORT MASTER DATA SHEET",
             data=csv_data,
-            file_name="seo_migration_matrix.csv",
+            file_name=f"{site_prefix}_seo_migration_matrix.csv",
             mime="text/csv",
             use_container_width=True,
         )
 
     with btn_col2:
-        # Build complete schema matrix containing all extracted data
         matched_df = st.session_state.audit_results[
             st.session_state.audit_results["Match Status"] == "MATCHED"
         ].copy()
@@ -346,7 +384,7 @@ if st.session_state.audit_results is not None:
         st.download_button(
             label="📥 EXPORT RANKMATH ALL SEO DATA",
             data=rankmath_all_csv,
-            file_name="rankmath_complete_seo_export.csv",
+            file_name=f"{site_prefix}_rankmath_complete_seo_export.csv",
             mime="text/csv",
             use_container_width=True,
         )
