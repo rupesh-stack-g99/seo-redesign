@@ -10,20 +10,45 @@ import streamlit as st
 # --- Helper Functions ---
 
 
-def get_slug(url):
-    path = urlparse(url).path
-    return path.strip("/").lower()
+def clean_domain_input(url):
+    """Ensures the domain has a proper protocol prefix."""
+    url = url.strip()
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    # Strip any trailing slashes from the base domain
+    return url.rstrip("/")
+
+
+def get_slug(url, base_domain):
+    """Extracts ONLY the path/slug relative to the domain root."""
+    # Ensure both have schemes for accurate parsing
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+
+    parsed_url = urlparse(url)
+    path = parsed_url.path
+
+    # Clean up trailing/leading slashes
+    slug = path.strip("/").lower()
+
+    # If it's the homepage, return 'homepage' or empty string
+    return slug if slug else "homepage"
 
 
 def discover_urls_from_sitemap(domain_url):
     urls = set()
-    sitemap_locations = ["sitemap.xml", "sitemap_index.xml", "wp-sitemap.xml"]
+    sitemap_locations = [
+        "sitemap.xml",
+        "sitemap_index.xml",
+        "wp-sitemap.xml",
+        "sitemap-pages.xml",
+    ]
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
 
     for loc in sitemap_locations:
-        sitemap_url = urljoin(domain_url, loc)
+        sitemap_url = f"{domain_url}/{loc}"
         try:
             response = requests.get(sitemap_url, headers=headers, timeout=10)
             if response.status_code == 200:
@@ -52,7 +77,7 @@ def discover_urls_from_sitemap(domain_url):
     return [domain_url]
 
 
-def scrape_website_1_seo(url, status_container):
+def scrape_website_1_seo(url):
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -82,8 +107,6 @@ def scrape_website_1_seo(url, status_container):
                 schemas.append(tag.string.strip() if tag.string else "")
 
         return {
-            "slug": get_slug(url),
-            "w1_url": url,
             "title": title,
             "meta_description": meta_desc,
             "canonical": canonical,
@@ -99,57 +122,63 @@ st.set_page_config(page_title="SEO Migration Mapper", page_icon="🔗", layout="
 
 st.title("🔗 Domain-to-Domain SEO Migration Mapper")
 st.write(
-    "Enter your old and new domain URLs. The tool will automatically find the pages via sitemaps, scrape Website 1's SEO metrics, map them by slug, and build a CSV download."
+    "Enter your domains below. The tool extracts **only the clean paths/slugs** from your live site and beta site to perfectly align your metadata."
 )
 
 col1, col2 = st.columns(2)
 with col1:
-    domain_1 = st.text_input(
-        "Website 1 (Source Domain)", "https://example-website1.com"
-    )
+    raw_domain_1 = st.text_input("Website 1 (Main Live Website)", "youthfulmedicine.com")
 with col2:
-    domain_2 = st.text_input(
-        "Website 2 (Destination Domain)", "https://example-website2.com"
-    )
+    raw_domain_2 = st.text_input("Website 2 (Beta Website)", "youthfulmedicine.gogroth.com")
 
 if st.button("Generate Migration Sheet", type="primary"):
-    if not domain_1 or not domain_2:
-        st.error("Please provide both domain URLs.")
+    if not raw_domain_1 or not raw_domain_2:
+        st.error("Please provide both domain entries.")
     else:
-        with st.spinner("Step 1: Discovering URLs via Sitemaps..."):
+        # Clean inputs automatically
+        domain_1 = clean_domain_input(raw_domain_1)
+        domain_2 = clean_domain_input(raw_domain_2)
+
+        with st.spinner("Analyzing sitemaps for both environments..."):
             w1_urls = discover_urls_from_sitemap(domain_1)
             w2_urls = discover_urls_from_sitemap(domain_2)
 
         st.info(
-            f"Found {len(w1_urls)} URLs on Website 1 and {len(w2_urls)} URLs on Website 2."
+            f"Found {len(w1_urls)} pages on Website 1 and {len(w2_urls)} pages on Website 2."
         )
 
+        # Scrape and store Website 1 data by its absolute slug
         w1_data_store = {}
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        # Step 2: Scrape Website 1
         for i, url in enumerate(w1_urls):
-            status_text.text(f"Scraping Website 1 ({i+1}/{len(w1_urls)}): {url}")
-            data = scrape_website_1_seo(url, status_text)
-            if data:
-                w1_data_store[data["slug"]] = data
+            slug = get_slug(url, domain_1)
+            status_text.text(f"Scraping Live Site SEO data for slug: /{slug}")
+            
+            seo_info = scrape_website_1_seo(url)
+            if seo_info:
+                w1_data_store[slug] = {
+                    "w1_url": url,
+                    **seo_info
+                }
             progress_bar.progress((i + 1) / len(w1_urls))
 
-        status_text.text("Mapping layouts and compiling CSV...")
+        status_text.text("Cross-referencing matching slugs...")
 
-        # Step 3: Map to Website 2
+        # Map to Website 2 URLs based purely on slugs
         final_rows = []
         for w2_url in w2_urls:
-            slug = get_slug(w2_url)
+            slug = get_slug(w2_url, domain_2)
+
             if slug in w1_data_store:
                 w1_info = w1_data_store[slug]
                 final_rows.append(
                     {
                         "Match Status": "MATCHED",
-                        "Slug": slug,
-                        "Website 2 New URL": w2_url,
-                        "Website 1 Old URL": w1_info["w1_url"],
+                        "Slug": f"/{slug}" if slug != "homepage" else "/",
+                        "Website 2 New URL (Beta)": w2_url,
+                        "Website 1 Old URL (Live)": w1_info["w1_url"],
                         "Meta Title": w1_info["title"],
                         "Meta Description": w1_info["meta_description"],
                         "Canonical (Old)": w1_info["canonical"],
@@ -161,9 +190,9 @@ if st.button("Generate Migration Sheet", type="primary"):
                 final_rows.append(
                     {
                         "Match Status": "NO MATCH FOUND",
-                        "Slug": slug,
-                        "Website 2 New URL": w2_url,
-                        "Website 1 Old URL": "N/A",
+                        "Slug": f"/{slug}" if slug != "homepage" else "/",
+                        "Website 2 New URL (Beta)": w2_url,
+                        "Website 1 Old URL (Live)": "N/A",
                         "Meta Title": "",
                         "Meta Description": "",
                         "Canonical (Old)": "",
@@ -176,14 +205,10 @@ if st.button("Generate Migration Sheet", type="primary"):
         progress_bar.empty()
         status_text.empty()
 
-        st.success("🎉 Migration Mapping Sheet Generated!")
+        st.success("🎉 Cross-Matching Sheet Compiled Successfully!")
+        st.dataframe(df)
 
-        # Display a preview of the mapping data
-        st.dataframe(df.head(10))
-
-        # Convert dataframe to CSV byte stream for downloading
         csv_data = df.to_csv(index=False, encoding="utf-8-sig")
-
         st.download_button(
             label="📥 Download Complete CSV Sheet",
             data=csv_data,
