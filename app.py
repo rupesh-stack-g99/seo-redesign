@@ -122,7 +122,6 @@ def extract_wordpress_page_id(url):
         if response.status_code == 200:
             soup = bs4.BeautifulSoup(response.text, "html.parser")
 
-            # Engine A1: Parse Target Body Classes
             body = soup.find("body")
             if body and body.has_attr("class"):
                 classes = " ".join(body["class"])
@@ -132,32 +131,27 @@ def extract_wordpress_page_id(url):
                 if match:
                     return match.group(1)
 
-            # Engine A2: Parse Rel Shortlinks
             shortlink = soup.find("link", rel="shortlink")
             if shortlink and shortlink.has_attr("href"):
                 match = re.search(r"[?&](?:p|page_id)=(\d+)", shortlink["href"])
                 if match:
                     return match.group(1)
 
-        # Engine B: Deep REST API Engine Query Fallback (Uses Slugs to request matching database object ids directly)
         parsed_url = urlparse(url)
         base_domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
         slug = get_slug_from_url(url)
 
-        if slug == "homepage":
-            # Direct challenge query lookup for home instance variables
-            api_url = f"{base_domain}/wp-json/wp/v2/pages?per_page=1"
-        else:
-            # Post/Page slug context filter lookup loop
-            api_url = f"{base_domain}/wp-json/wp/v2/pages?slug={slug}"
-
+        api_url = (
+            f"{base_domain}/wp-json/wp/v2/pages?per_page=1"
+            if slug == "homepage"
+            else f"{base_domain}/wp-json/wp/v2/pages?slug={slug}"
+        )
         api_res = requests.get(api_url, headers=headers, timeout=8)
         if api_res.status_code == 200:
             data = api_res.json()
             if data and isinstance(data, list) and len(data) > 0:
                 return str(data[0].get("id", ""))
 
-        # CPT Fallback Check loop
         if slug != "homepage":
             cpt_api_url = f"{base_domain}/wp-json/wp/v2/posts?slug={slug}"
             cpt_res = requests.get(cpt_api_url, headers=headers, timeout=8)
@@ -201,7 +195,7 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     
     html, body, [data-testid="stAppViewContainer"] {
         font-family: 'Plus Jakarta Sans', sans-serif !important;
@@ -289,18 +283,22 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-with st.expander("ℹ️ About This Audit Engine & Workflow Pipeline"):
-    st.markdown(
-        "Automates mapping and metadata harvesting targets across platform architectures."
-    )
-
+# Configuration Panel Split
 col1, col2 = st.columns(2)
 with col1:
     sitemap_1_input = st.text_input(
         "Enter Current Live Site (Sitemap XML URL)", value=""
     )
+    live_csv_file = st.file_uploader(
+        "Optional: Upload Live Site RankMath Backup CSV", type=["csv"]
+    )
 with col2:
     sitemap_2_input = st.text_input("Enter Beta Site (Sitemap XML URL)", value="")
+    beta_csv_file = st.file_uploader(
+        "Optional: Upload Beta Site RankMath Backup CSV", type=["csv"]
+    )
+
+st.write("")
 
 _, center_btn_col, _ = st.columns([2, 2, 2])
 with center_btn_col:
@@ -312,6 +310,14 @@ if action_btn:
     if not sitemap_1_input.strip() or not sitemap_2_input.strip():
         st.error("Execution parameters incomplete.")
     else:
+        # Load backend configurations if supplied
+        live_backup_df = (
+            pd.read_csv(live_csv_file) if live_csv_file is not None else None
+        )
+        beta_backup_df = (
+            pd.read_csv(beta_csv_file) if beta_csv_file is not None else None
+        )
+
         with st.spinner("Processing deep indexing & harvesting properties..."):
             w1_urls = extract_urls_from_sitemap_url(sitemap_1_input.strip())
             w2_urls = extract_urls_from_sitemap_url(sitemap_2_input.strip())
@@ -334,9 +340,33 @@ if action_btn:
 
             for i, (slug, url) in enumerate(w1_slug_to_url.items()):
                 status_text.markdown(f"`Scanning Live Site Engine:` **/{slug}**")
-                seo = scrape_current_live_site_seo(url)
-                if seo:
-                    w1_seo_data[slug] = seo
+
+                # Core Lookup Check: Attempt extraction from Live CSV file mapping first
+                fallback_found = False
+                if live_backup_df is not None and "slug" in live_backup_df.columns:
+                    match_row = live_backup_df[live_backup_df["slug"] == slug]
+                    if not match_row.empty:
+                        row = match_row.iloc[0]
+                        w1_seo_data[slug] = {
+                            "title": row.get("seo_title", ""),
+                            "meta_description": row.get("seo_description", ""),
+                            "canonical": row.get("advanced_canonical", ""),
+                            "keywords": row.get("focus_keyword", ""),
+                            "schema_json_ld": row.get("schema_data", ""),
+                            "fb_title": row.get("social_facebook_title", ""),
+                            "fb_desc": row.get("social_facebook_description", ""),
+                            "fb_image": row.get("social_facebook_image", ""),
+                            "tw_title": row.get("social_twitter_title", ""),
+                            "tw_desc": row.get("social_twitter_description", ""),
+                            "tw_image": row.get("social_twitter_image", ""),
+                        }
+                        fallback_found = True
+
+                if not fallback_found:
+                    seo = scrape_current_live_site_seo(url)
+                    if seo:
+                        w1_seo_data[slug] = seo
+
                 progress_bar.progress((i + 1) / len(w1_slug_to_url))
 
             progress_bar.empty()
@@ -355,8 +385,16 @@ if action_btn:
                     f"`Fetching Beta WordPress Metadata:` **{display_w2_slug}**"
                 )
 
-                # Upgraded dual-engine call routine
-                wp_page_id = extract_wordpress_page_id(w2_url)
+                wp_page_id = ""
+                # Core Lookup Check: Extract exact ID from Beta CSV file upload if available
+                if beta_backup_df is not None and "slug" in beta_backup_df.columns:
+                    match_beta = beta_backup_df[beta_backup_df["slug"] == w2_slug]
+                    if not match_beta.empty:
+                        wp_page_id = str(match_beta.iloc[0].get("id", ""))
+
+                # API / Scraper validation fallback
+                if not wp_page_id:
+                    wp_page_id = extract_wordpress_page_id(w2_url)
 
                 if w2_slug in w1_slug_to_url:
                     w1_url = w1_slug_to_url[w2_slug]
@@ -464,7 +502,6 @@ if st.session_state.audit_results is not None:
             st.session_state.audit_results["Match Status"] == "MATCHED"
         ].copy()
 
-        # RankMath CSV Layout Array Output
         rankmath_complete_df = pd.DataFrame(
             {
                 "id": matched_df["Beta WP Page ID"],
@@ -474,7 +511,7 @@ if st.session_state.audit_results is not None:
                 "seo_description": matched_df["Meta Description (from Live)"],
                 "is_pillar_content": 0,
                 "focus_keyword": matched_df["Meta Tags / Keywords"],
-                "seo_score": 80,  # Explicitly assigned default target score value
+                "seo_score": 80,
                 "robots": "",
                 "advanced_canonical": matched_df["Canonical Tag (from Live)"],
                 "primary_term": "",
