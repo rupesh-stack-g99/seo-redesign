@@ -328,7 +328,8 @@ if st.session_state.audit_results is not None:
         )
 
     with btn_col2:
-        if st.button("🔄 RESET AUDIT SYSTEM", use_container_width=True):
+        # Clear all states and reset text inputs to blank values upon clicking
+        if st.button("🔄 START AUDIT FOR NEW SITE", use_container_width=True):
             st.session_state.audit_results = None
             st.session_state.w1_count = 0
             st.session_state.w2_count = 0
